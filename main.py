@@ -22,6 +22,7 @@ bot = Bot(token=tg_token)
 dp = Dispatcher(bot, storage=MemoryStorage())
 
 
+
 class W(StatesGroup):
     waiting_for_photo = State()
     waiting_for_contact = State()
@@ -57,8 +58,10 @@ async def screen (call: types.CallbackQuery, state: FSMContext):
 @dp.message_handler(content_types=ContentTypes.PHOTO, state=W.waiting_for_photo)
 async def screen_photo (msg:types.Message, state: FSMContext):
     await msg.answer(text='Отлично! Спасибо за отзыв! Укажите, пожалуйста, номер телефона, ФИО и банк для получения бонуса, например: +79259999999, Иванов Иван Иванович, Сбербанк', reply_markup=back_to_menu())
-    await state.update_data(photo=msg.photo[-1].file_id)
-    
+    photo_info = await bot.get_file(msg.photo[-1].file_id) 
+    photo_name = f'photo_{msg.from_user.id}.jpg'
+    destination = f'C:\\Users\\Vivo\\Desktop\\Screenshots\\{photo_name}'
+    await photo_info.download(destination)
     await W.waiting_for_contact.set()
 
 
