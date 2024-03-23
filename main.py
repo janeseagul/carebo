@@ -7,7 +7,6 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.types import ContentTypes, callback_query
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from dotenv import load_dotenv
 
 import aiogram
@@ -17,11 +16,18 @@ from keyboard import *
 
 
 load_dotenv()
-tg_token = os.environ['tg_bot_api']
+storage = MemoryStorage()
+tg_token = '7063562748:AAGk0xoUOVrPLcHqcKrCKZ1DsedXopc_2Ss'
 bot = Bot(token=tg_token)
 dp = Dispatcher(bot, storage=MemoryStorage())
+contact = ''
 
-
+def get_contact(msg):
+    global contact
+    contact = msg.text
+    contact_log = open ('User\Contacts.txt', 'a')
+    contact_log.write(f'Contact {msg.from_user.id}')
+    contact_log.close()
 
 class W(StatesGroup):
     waiting_for_photo = State()
@@ -60,13 +66,22 @@ async def screen_photo (msg:types.Message, state: FSMContext):
     await msg.answer(text='Отлично! Спасибо за отзыв! Укажите, пожалуйста, номер телефона, ФИО и банк для получения бонуса, например: +79259999999, Иванов Иван Иванович, Сбербанк', reply_markup=back_to_menu())
     photo_info = await bot.get_file(msg.photo[-1].file_id) 
     photo_name = f'photo_{msg.from_user.id}.jpg'
-    destination = f'C:\\Users\\Vivo\\Desktop\\Screenshots\\{photo_name}'
-    await photo_info.download(destination)
+    if not os.path.exists('Media'):
+        os.makedirs('Media')
+    dest_dir = f'Media\{photo_name}'
+    await photo_info.download(dest_dir)
     await W.waiting_for_contact.set()
 
 
 @dp.message_handler(state=W.waiting_for_contact)
 async def get_contact (msg: types.Message, state: FSMContext):
+    global contact
+    contact = msg.text
+    if not os.path.exists('Media'):
+        os.makedirs('Media')
+    contact_log = open(f'Media/Anketa_{msg.from_user.id}.txt', 'a')
+    contact_log.write(f'Contact {msg.from_user.id}, {msg.text}')
+    contact_log.close()
     await msg.answer(text='Контактные данные получены. Спасибо за отзыв! Бонус будет начислен после проверки скриншота - обычно это занимает 2-3 часа.', reply_markup=start())
     await state.finish()
 
